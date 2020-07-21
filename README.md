@@ -22,7 +22,7 @@ I have a classic vehicle that does not have OBD-II or an ECU, and I want to mode
 TODO: add youtube video
 
 ## BOM
-This table contains affiliate links, I may receive a small commission if you choose to purchase using them.
+This table contains affiliate links, I may receive a small commission if you choose to purchase using them. I obtained data sheets for the senders I already have installed, you will probably want to use your existing senders as well, which will require altering the configuration file. 
 | ID | Name                     | Designator | Footprint         | Quantity | Manufacturer Part | Manufacturer | Supplier  | Supplier Part            |
 |----|--------------------------|------------|-------------------|----------|-------------------|--------------|-----------|--------------------------|
 | 1  | NODEMCU ESP12E ESP8266EX | U1         | ESP12E_DEVKIT-V1B | 1        |                   | Makerfocus   | Amazon    | https://amzn.to/32xisrJ  |
@@ -42,3 +42,6 @@ This table contains affiliate links, I may receive a small commission if you cho
 2. Load the config file into ESPhome
 3. Configure your wifi, SSID, password, and static IP address (or use DHCP)
 4. Download and flash the firmware, the first time using a Micro USB cable and ESPhome flasher.  Subsequent updates can happen over wifi.
+5. I am driving the temp and oil senders using 5v. Normally they operate using 12v.  This has not been a problem for me, but you'll want to make sure no 12v signals enter the circuit (except where indicated for the power supply) when installing it in your vehicle.
+6. I bench tested the unit using an extra coolant temp sender I purchased, and a 100 Ohm placehold resistor for the oil pressure sender before installing it in my vehicle.
+7. If you use different senders, you will need to edit the config file for the resistance values, calibration tables, B-values, and so on as appropriate. These values are for my vehicle and senders.
