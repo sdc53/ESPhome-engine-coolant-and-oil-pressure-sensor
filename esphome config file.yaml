@@ -1,0 +1,140 @@
+esphome:
+  name: engine1
+  platform: ESP8266
+  board: nodemcuv2
+
+wifi:
+  networks:
+  - ssid: "yourSSIDhere"
+    password: "yourPassHere"
+    priority: 1
+  - ssid: "yourSecondSSIDhere"
+    password: "yourPassHere"
+    priority: 0
+  
+  # Optional manual IP
+  manual_ip:
+    static_ip: 192.168.2.210
+    gateway: 192.168.2.1
+    subnet: 255.255.255.0
+    dns1: 192.168.2.1
+    #dns2: 8.8.8.8
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Engine1 Fallback Hotspot"
+    password: "yourPassHere"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+mqtt:
+  broker: 192.168.2.200
+
+switch:
+  - platform: gpio
+    name: "Relay"
+    pin: 13
+    inverted: yes
+
+# Coolant temp
+sensor:
+  - platform: ntc
+    id: coolant_temp
+    sensor: resistance1
+    calibration:
+      b_constant: 4148.56
+      reference_temperature: 25°C
+      reference_resistance: 1981Ohm
+      #reference_temperature: 21°C
+      #reference_resistance: 2292Ohm
+    name: Coolant Temperature
+    expire_after: 5s
+    retain: false
+
+  # source sensors:
+  - platform: resistance
+    id: resistance1
+    sensor: source_sensor
+    configuration: DOWNSTREAM
+    resistor: 208.8Ohm
+    name: Resistance Sensor
+    accuracy_decimals: 5
+    reference_voltage: 5.0
+    filters: 
+      #calculate resistance relative to vref because assuming 5v is inaccurate
+      #formula: R = (volts * R_Balance) / (vref - volts);
+      - lambda: return((id(source_sensor).state * 208.8) / (id(vref).state - id(source_sensor).state));
+
+
+  - platform: ads1115
+    multiplexer: 'A0_GND'
+    gain: 6.144
+    id: source_sensor
+    name: "Source Sensor"
+    accuracy_decimals: 5
+    update_interval: 1s
+    filters: 
+    #- lambda: return ((x/3.9*4095)*(3.3/4095))-0.1;
+
+  # source sensors:
+  - platform: resistance
+    id: resistance2
+    sensor: source_sensor2
+    configuration: DOWNSTREAM
+    resistor: 99Ohm
+    name: Oil Pressure
+    accuracy_decimals: 5
+    reference_voltage: 5
+    unit_of_measurement: "PSI"
+    filters:
+      #calculate resistance relative to vref because assuming 5v is inaccurate
+      #formula: R = (volts * R_Balance) / (vref - volts);
+      - lambda: return((id(source_sensor2).state * 99.0) / (id(vref).state - id(source_sensor2).state));
+      - calibrate_linear:
+          # Map 0.0 (from sensor) to 0.0 (true value)
+          - 0.0 -> 0.0
+          - 33.0 -> 100.0
+          - 48.0 -> 90.0
+          - 61.0 -> 80.0
+          - 74.0 -> 70.0
+          - 88.0 -> 60.0
+          - 103.0 -> 50.0
+          - 121.0 -> 40.0
+          - 141.0 -> 30.0
+          - 166.0 -> 20.0
+          - 198.0 -> 10.0
+          - 220.0 -> 5.0
+          - 240.0 -> 0.0
+
+  - platform: ads1115
+    multiplexer: 'A1_GND'
+    gain: 6.144
+    id: source_sensor2
+    name: "Source Sensor2"
+    accuracy_decimals: 5
+    update_interval: 1s
+
+  - platform: ads1115
+    multiplexer: 'A3_GND'
+    gain: 6.144
+    id: vref
+    name: "vref"
+    accuracy_decimals: 5
+    update_interval: 0.5s
+    
+ads1115:
+  - address: 0x48
+
+i2c:
+  sda: 4
+  scl: 5
+  scan: True
+  id: bus_a
