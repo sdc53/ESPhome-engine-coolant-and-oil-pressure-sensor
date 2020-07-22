@@ -19,7 +19,8 @@ I have a classic vehicle that does not have OBD-II or an ECU, and I want to mode
 ![Schematic](https://github.com/sdc53/ESPhome-engine-coolant-and-oil-pressure-sensor/blob/master/Schematic_bus%20esp8266%20sensor_2020-07-20_17-23-59.png)
 
 ## Video link
-TODO: add youtube video
+Project overview video: https://youtu.be/UH3q9yckc6g
+There are other videos on my channel related to this project, including a technical overview of the software and companion github project.
 
 ## BOM
 This table contains affiliate links, I may receive a small commission if you choose to purchase using them. I obtained data sheets for the senders I already have installed, you will probably want to use your existing senders as well, which will require altering the configuration file. 
