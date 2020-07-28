@@ -5,11 +5,11 @@ esphome:
 
 wifi:
   networks:
-  - ssid: "yourSSIDhere"
-    password: "yourPassHere"
+  - ssid: !secret busssid
+    password: !secret wifipass
     priority: 1
-  - ssid: "yourSecondSSIDhere"
-    password: "yourPassHere"
+  - ssid: !secret housessid
+    password: !secret wifipass
     priority: 0
   
   # Optional manual IP
@@ -23,7 +23,7 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Engine1 Fallback Hotspot"
-    password: "yourPassHere"
+    password: !secret engine1fallbackpass
 
 captive_portal:
 
@@ -43,6 +43,7 @@ switch:
     name: "Relay"
     pin: 13
     inverted: yes
+    id: relay
 
 # Coolant temp
 sensor:
@@ -58,6 +59,15 @@ sensor:
     name: Coolant Temperature
     expire_after: 5s
     retain: false
+    filters:
+    - lambda: !lambda |- 
+        if (id(relay).state) {
+          return x;
+        } else {
+          return 0;
+        }
+    - median:
+
 
   # source sensors:
   - platform: resistance
@@ -80,7 +90,7 @@ sensor:
     id: source_sensor
     name: "Source Sensor"
     accuracy_decimals: 5
-    update_interval: 1s
+    update_interval: 0.25s
     filters: 
     #- lambda: return ((x/3.9*4095)*(3.3/4095))-0.1;
 
@@ -95,12 +105,18 @@ sensor:
     reference_voltage: 5
     unit_of_measurement: "PSI"
     filters:
-      #calculate resistance relative to vref because assuming 5v is inaccurate
-      #formula: R = (volts * R_Balance) / (vref - volts);
-      - lambda: return((id(source_sensor2).state * 99.0) / (id(vref).state - id(source_sensor2).state));
-      - calibrate_linear:
+        #calculate resistance relative to vref because assuming 5v is inaccurate
+        #formula: R = (volts * R_Balance) / (vref - volts);
+      - lambda: !lambda |- 
+          if (id(relay).state) {
+            return((id(source_sensor2).state * 99.0) / (id(vref).state - id(source_sensor2).state));
+          } else {
+            return 250.0;
+          }
+      - calibrate_polynomial:
+         degree: 5
+         datapoints:
           # Map 0.0 (from sensor) to 0.0 (true value)
-          - 0.0 -> 0.0
           - 33.0 -> 100.0
           - 48.0 -> 90.0
           - 61.0 -> 80.0
@@ -112,7 +128,30 @@ sensor:
           - 166.0 -> 20.0
           - 198.0 -> 10.0
           - 220.0 -> 5.0
-          - 240.0 -> 0.0
+          - 239.0 -> 0.2
+          - 240.0 -> 0.1
+          - 250.0 -> 0.0
+      - lambda: !lambda |-
+          if(x < 0) { 
+            return 0.0; 
+          } else {
+            return x; 
+          }
+
+  # source sensors:
+  - platform: resistance
+    id: resistance3
+    sensor: source_sensor2
+    configuration: DOWNSTREAM
+    resistor: 99Ohm
+    name: Oil Pressure resist
+    accuracy_decimals: 5
+    reference_voltage: 5
+    unit_of_measurement: "ohms"
+    filters:
+      #calculate resistance relative to vref because assuming 5v is inaccurate
+      #formula: R = (volts * R_Balance) / (vref - volts);
+      - lambda: return((id(source_sensor2).state * 99.0) / (id(vref).state - id(source_sensor2).state));
 
   - platform: ads1115
     multiplexer: 'A1_GND'
@@ -120,7 +159,7 @@ sensor:
     id: source_sensor2
     name: "Source Sensor2"
     accuracy_decimals: 5
-    update_interval: 1s
+    update_interval: 0.25s
 
   - platform: ads1115
     multiplexer: 'A3_GND'
@@ -128,7 +167,7 @@ sensor:
     id: vref
     name: "vref"
     accuracy_decimals: 5
-    update_interval: 0.5s
+    update_interval: 0.25s
     
 ads1115:
   - address: 0x48
